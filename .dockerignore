@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.git/
+.gitignore
+.vscode/
+*.zip
+.ipynb_checkpoints/
+data/
+output/
+checkpoints/
+*.pt
+*.ckpt

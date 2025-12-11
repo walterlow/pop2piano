@@ -1,0 +1,20 @@
+services:
+  pop2piano:
+    build: .
+    volumes:
+      - .:/app                           # Mount code for development
+      - ./data:/app/data                 # Input audio files
+      - ./output:/app/output             # Generated MIDI
+      - ./checkpoints:/app/checkpoints   # Model weights
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    working_dir: /app
+    stdin_open: true
+    tty: true
