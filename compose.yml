@@ -1,10 +1,11 @@
 services:
   pop2piano:
     build: .
+    ports:
+      - "8000:8000"
     volumes:
       - .:/app                           # Mount code for development
-      - ./data:/app/data                 # Input audio files
-      - ./output:/app/output             # Generated MIDI
+      - ./data:/app/data                 # Input/output audio files
       - ./checkpoints:/app/checkpoints   # Model weights
     deploy:
       resources:
@@ -15,6 +16,12 @@ services:
               capabilities: [gpu]
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
+      - UPLOAD_DIR=/app/data/uploads
+      - OUTPUT_DIR=/app/data/outputs
+      - CHECKPOINT_PATH=/app/checkpoints/model.ckpt
+      - CONFIG_PATH=/app/config.yaml
+      - PORT=8000
+      - DEBUG=false
     working_dir: /app
     stdin_open: true
     tty: true

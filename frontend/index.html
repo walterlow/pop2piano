@@ -639,11 +639,27 @@
                 <div class="input-group" style="margin-top: 1.5rem;">
                     <label for="composer">Piano Style</label>
                     <select id="composer" class="composer-select">
-                        <option value="composer1">Style 1 - Classical</option>
-                        <option value="composer2">Style 2 - Romantic</option>
-                        <option value="composer3">Style 3 - Modern</option>
-                        <option value="composer4">Style 4 - Jazz</option>
-                        <option value="composer5">Style 5 - Ballad</option>
+                        <option value="composer1">Style 1</option>
+                        <option value="composer2">Style 2</option>
+                        <option value="composer3">Style 3</option>
+                        <option value="composer4">Style 4</option>
+                        <option value="composer5">Style 5</option>
+                        <option value="composer6">Style 6</option>
+                        <option value="composer7">Style 7</option>
+                        <option value="composer8">Style 8</option>
+                        <option value="composer9">Style 9</option>
+                        <option value="composer10">Style 10</option>
+                        <option value="composer11">Style 11</option>
+                        <option value="composer12">Style 12</option>
+                        <option value="composer13">Style 13</option>
+                        <option value="composer14">Style 14</option>
+                        <option value="composer15">Style 15</option>
+                        <option value="composer16">Style 16</option>
+                        <option value="composer17">Style 17</option>
+                        <option value="composer18">Style 18</option>
+                        <option value="composer19">Style 19</option>
+                        <option value="composer20">Style 20</option>
+                        <option value="composer21">Style 21</option>
                     </select>
                 </div>
 
@@ -672,7 +688,7 @@
             <div class="results" id="results">
                 <div class="results-header">
                     <h2 class="results-title">Your Piano Cover is Ready</h2>
-                    <p class="results-subtitle">Listen and compare the original with the AI-generated piano version</p>
+                    <p class="results-subtitle">Listen and compare the original with the generated piano version</p>
                 </div>
 
                 <div class="audio-section">
@@ -730,13 +746,15 @@
     </main>
 
     <footer>
-        <p>Powered by <a href="https://arxiv.org/abs/2211.00895" target="_blank">Pop2Piano</a> &middot; AI-Generated Piano Covers</p>
+        <p>Powered by <a href="https://arxiv.org/abs/2211.00895" target="_blank">Pop2Piano</a></p>
     </footer>
 
     <script>
         // State
         let selectedFile = null;
         let currentTab = 'youtube';
+        let currentJobId = null;
+        let pollInterval = null;
 
         // Elements
         const tabs = document.querySelectorAll('.tab');
@@ -812,9 +830,28 @@
             fileDrop.style.display = 'none';
         }
 
+        // Stop and reset audio players and polling
+        function stopAudio() {
+            const originalAudio = document.getElementById('originalAudio');
+            const pianoAudio = document.getElementById('pianoAudio');
+            originalAudio.pause();
+            originalAudio.currentTime = 0;
+            originalAudio.src = '';
+            pianoAudio.pause();
+            pianoAudio.currentTime = 0;
+            pianoAudio.src = '';
+            // Stop any active polling
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+            }
+            currentJobId = null;
+        }
+
         // Process Button
         processBtn.addEventListener('click', async () => {
             hideError();
+            stopAudio();
 
             if (currentTab === 'youtube') {
                 const url = document.getElementById('youtubeUrl').value.trim();
@@ -835,7 +872,7 @@
         async function processYouTube(url) {
             const composer = document.getElementById('composer').value;
 
-            showLoading('Downloading from YouTube...');
+            showLoading('Submitting job...');
 
             try {
                 const response = await fetch('/api/process/youtube', {
@@ -847,10 +884,11 @@
                 const data = await response.json();
 
                 if (!response.ok) {
-                    throw new Error(data.error || 'Processing failed');
+                    throw new Error(data.detail || data.error || 'Processing failed');
                 }
 
-                showResults(data);
+                currentJobId = data.job_id;
+                startPolling();
             } catch (error) {
                 hideLoading();
                 showError(error.message);
@@ -863,7 +901,7 @@
             formData.append('file', file);
             formData.append('composer', composer);
 
-            showLoading('Processing your audio...');
+            showLoading('Uploading file...');
 
             try {
                 const response = await fetch('/api/process/upload', {
@@ -874,13 +912,53 @@
                 const data = await response.json();
 
                 if (!response.ok) {
-                    throw new Error(data.error || 'Processing failed');
+                    throw new Error(data.detail || data.error || 'Processing failed');
                 }
 
-                showResults(data);
+                currentJobId = data.job_id;
+                startPolling();
             } catch (error) {
                 hideLoading();
                 showError(error.message);
+            }
+        }
+
+        function startPolling() {
+            if (pollInterval) clearInterval(pollInterval);
+            pollInterval = setInterval(checkJobStatus, 1000);
+            checkJobStatus(); // Check immediately
+        }
+
+        function stopPolling() {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+            }
+        }
+
+        async function checkJobStatus() {
+            if (!currentJobId) return;
+
+            try {
+                const response = await fetch(`/api/status/${currentJobId}`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Failed to get status');
+                }
+
+                loadingStatus.textContent = data.progress;
+
+                if (data.status === 'completed') {
+                    stopPolling();
+                    showResults(data);
+                } else if (data.status === 'failed') {
+                    stopPolling();
+                    hideLoading();
+                    showError(data.error || 'Processing failed');
+                }
+            } catch (error) {
+                console.error('Status check failed:', error);
             }
         }
 
@@ -889,19 +967,6 @@
             results.classList.remove('active');
             loading.classList.add('active');
             loadingStatus.textContent = status;
-
-            // Simulate status updates
-            setTimeout(() => {
-                if (loading.classList.contains('active')) {
-                    loadingStatus.textContent = 'Analyzing audio structure...';
-                }
-            }, 3000);
-
-            setTimeout(() => {
-                if (loading.classList.contains('active')) {
-                    loadingStatus.textContent = 'Generating piano arrangement...';
-                }
-            }, 8000);
         }
 
         function hideLoading() {
@@ -912,13 +977,12 @@
         function showResults(data) {
             loading.classList.remove('active');
 
-            document.getElementById('originalAudio').src = data.original_audio;
-            document.getElementById('pianoAudio').src = data.piano_audio;
+            document.getElementById('originalAudio').src = data.original_audio || '';
+            document.getElementById('pianoAudio').src = data.piano_audio || '';
 
-            const jobId = data.job_id;
-            document.getElementById('downloadOriginal').href = data.original_audio.replace('/api/file/', '/api/download/');
-            document.getElementById('downloadPiano').href = data.piano_audio.replace('/api/file/', '/api/download/');
-            document.getElementById('downloadMidi').href = data.midi.replace('/api/file/', '/api/download/');
+            document.getElementById('downloadOriginal').href = (data.original_audio || '').replace('/api/file/', '/api/download/');
+            document.getElementById('downloadPiano').href = (data.piano_audio || '').replace('/api/file/', '/api/download/');
+            document.getElementById('downloadMidi').href = (data.midi || '').replace('/api/file/', '/api/download/');
 
             results.classList.add('active');
         }
@@ -934,6 +998,7 @@
 
         // New Track Button
         document.getElementById('newTrackBtn').addEventListener('click', () => {
+            stopAudio();
             results.classList.remove('active');
             inputForm.style.display = 'block';
 
