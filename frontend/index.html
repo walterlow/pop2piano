@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pop2Piano</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ivory: #FFFEF9;
+            --ebony: #0D0D0D;
+            --warm-gray: #8A8580;
+            --gold: #C4A962;
+            --soft-black: #1A1A1A;
+            --key-shadow: rgba(0,0,0,0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--ivory);
+            color: var(--ebony);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Piano Keys Background Pattern */
+        .piano-bg {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 120px;
+            display: flex;
+            justify-content: center;
+            gap: 2px;
+            opacity: 0.08;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .piano-bg .white-key {
+            width: 40px;
+            height: 100%;
+            background: var(--ebony);
+            border-radius: 0 0 4px 4px;
+        }
+
+        .piano-bg .black-key {
+            width: 24px;
+            height: 65%;
+            background: var(--ebony);
+            margin: 0 -12px;
+            z-index: 1;
+            border-radius: 0 0 3px 3px;
+        }
+
+        /* Header */
+        header {
+            padding: 3rem 2rem 2rem;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 3.5rem;
+            font-weight: 400;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.5rem;
+        }
+
+        .logo span {
+            font-style: italic;
+            color: var(--gold);
+        }
+
+        .tagline {
+            font-size: 1rem;
+            color: var(--warm-gray);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        /* Main Container */
+        main {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Card */
+        .card {
+            background: white;
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow:
+                0 4px 6px var(--key-shadow),
+                0 20px 40px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 2.5rem;
+            border-bottom: 1px solid #E8E6E3;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            background: none;
+            border: none;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--warm-gray);
+            cursor: pointer;
+            position: relative;
+            transition: color 0.3s ease;
+        }
+
+        .tab:hover {
+            color: var(--ebony);
+        }
+
+        .tab.active {
+            color: var(--ebony);
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--ebony);
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Input Styles */
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--soft-black);
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.03em;
+        }
+
+        .url-input {
+            width: 100%;
+            padding: 1rem 1.25rem;
+            font-size: 1rem;
+            font-family: 'DM Sans', sans-serif;
+            border: 2px solid #E8E6E3;
+            border-radius: 12px;
+            background: var(--ivory);
+            transition: all 0.3s ease;
+        }
+
+        .url-input:focus {
+            outline: none;
+            border-color: var(--ebony);
+            background: white;
+        }
+
+        .url-input::placeholder {
+            color: #B8B5B0;
+        }
+
+        /* File Upload */
+        .file-drop {
+            border: 2px dashed #D4D1CC;
+            border-radius: 16px;
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(180deg, var(--ivory) 0%, white 100%);
+        }
+
+        .file-drop:hover, .file-drop.dragover {
+            border-color: var(--ebony);
+            background: white;
+        }
+
+        .file-drop-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 1rem;
+            opacity: 0.6;
+        }
+
+        .file-drop-text {
+            font-size: 1rem;
+            color: var(--soft-black);
+            margin-bottom: 0.5rem;
+        }
+
+        .file-drop-hint {
+            font-size: 0.85rem;
+            color: var(--warm-gray);
+        }
+
+        .file-drop input {
+            display: none;
+        }
+
+        .file-selected {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: var(--ivory);
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        .file-selected-name {
+            flex: 1;
+            font-size: 0.9rem;
+            color: var(--soft-black);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .file-remove {
+            background: none;
+            border: none;
+            color: var(--warm-gray);
+            cursor: pointer;
+            padding: 0.25rem;
+        }
+
+        /* Composer Select */
+        .composer-select {
+            width: 100%;
+            padding: 1rem 1.25rem;
+            font-size: 1rem;
+            font-family: 'DM Sans', sans-serif;
+            border: 2px solid #E8E6E3;
+            border-radius: 12px;
+            background: var(--ivory);
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%238A8580' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 18px;
+        }
+
+        .composer-select:focus {
+            outline: none;
+            border-color: var(--ebony);
+        }
+
+        /* Button */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 1rem 2rem;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: var(--ebony);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--soft-black);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+
+        .btn-primary:disabled {
+            background: #B8B5B0;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: var(--ivory);
+            color: var(--ebony);
+            border: 2px solid #E8E6E3;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--ebony);
+        }
+
+        /* Loading State */
+        .loading {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            padding: 3rem;
+        }
+
+        .loading.active {
+            display: flex;
+        }
+
+        .loading-piano {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 1.5rem;
+        }
+
+        .loading-key {
+            width: 12px;
+            height: 48px;
+            background: var(--ebony);
+            border-radius: 0 0 3px 3px;
+            animation: keyPress 0.6s ease-in-out infinite;
+        }
+
+        .loading-key:nth-child(2) { animation-delay: 0.1s; }
+        .loading-key:nth-child(3) { animation-delay: 0.2s; }
+        .loading-key:nth-child(4) { animation-delay: 0.3s; }
+        .loading-key:nth-child(5) { animation-delay: 0.4s; }
+
+        @keyframes keyPress {
+            0%, 100% { transform: scaleY(1); opacity: 0.3; }
+            50% { transform: scaleY(0.7); opacity: 1; }
+        }
+
+        .loading-text {
+            font-size: 1.1rem;
+            color: var(--soft-black);
+        }
+
+        .loading-subtext {
+            font-size: 0.9rem;
+            color: var(--warm-gray);
+            margin-top: 0.5rem;
+        }
+
+        /* Results */
+        .results {
+            display: none;
+        }
+
+        .results.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .results-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .results-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .results-subtitle {
+            color: var(--warm-gray);
+            font-size: 0.95rem;
+        }
+
+        /* Audio Player */
+        .audio-section {
+            margin-bottom: 2rem;
+        }
+
+        .audio-label {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .audio-badge {
+            padding: 0.35rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-radius: 20px;
+        }
+
+        .badge-original {
+            background: #E8E6E3;
+            color: var(--soft-black);
+        }
+
+        .badge-piano {
+            background: var(--ebony);
+            color: white;
+        }
+
+        .audio-title {
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .audio-player {
+            width: 100%;
+            height: 56px;
+            border-radius: 12px;
+        }
+
+        .audio-player::-webkit-media-controls-panel {
+            background: var(--ivory);
+        }
+
+        /* Download Buttons */
+        .download-row {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #E8E6E3;
+        }
+
+        .download-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.875rem 1.25rem;
+            background: white;
+            border: 2px solid #E8E6E3;
+            border-radius: 10px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--soft-black);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .download-btn:hover {
+            border-color: var(--ebony);
+            background: var(--ivory);
+        }
+
+        .download-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* New Track Button */
+        .new-track-btn {
+            margin-top: 1.5rem;
+        }
+
+        /* Error Message */
+        .error-message {
+            display: none;
+            padding: 1rem 1.25rem;
+            background: #FEF2F2;
+            border: 1px solid #FECACA;
+            border-radius: 10px;
+            color: #991B1B;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .error-message.active {
+            display: block;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--warm-gray);
+            font-size: 0.85rem;
+        }
+
+        footer a {
+            color: var(--soft-black);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Musical Note Decoration */
+        .note-decoration {
+            position: fixed;
+            font-family: 'Playfair Display', serif;
+            font-size: 8rem;
+            color: var(--ebony);
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .note-1 { top: 10%; left: 5%; transform: rotate(-15deg); }
+        .note-2 { top: 30%; right: 8%; transform: rotate(10deg); }
+        .note-3 { bottom: 25%; left: 10%; transform: rotate(-5deg); }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .logo { font-size: 2.5rem; }
+            .card { padding: 2rem 1.5rem; }
+            .download-row { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Decorative Elements -->
+    <div class="note-decoration note-1">&#9835;</div>
+    <div class="note-decoration note-2">&#9834;</div>
+    <div class="note-decoration note-3">&#9833;</div>
+
+    <!-- Piano Background -->
+    <div class="piano-bg">
+        <div class="white-key"></div>
+        <div class="black-key"></div>
+        <div class="white-key"></div>
+        <div class="black-key"></div>
+        <div class="white-key"></div>
+        <div class="white-key"></div>
+        <div class="black-key"></div>
+        <div class="white-key"></div>
+        <div class="black-key"></div>
+        <div class="white-key"></div>
+        <div class="black-key"></div>
+        <div class="white-key"></div>
+        <div class="white-key"></div>
+        <div class="black-key"></div>
+        <div class="white-key"></div>
+        <div class="black-key"></div>
+        <div class="white-key"></div>
+        <div class="white-key"></div>
+        <div class="black-key"></div>
+        <div class="white-key"></div>
+        <div class="black-key"></div>
+        <div class="white-key"></div>
+        <div class="black-key"></div>
+        <div class="white-key"></div>
+    </div>
+
+    <header>
+        <h1 class="logo">Pop<span>2</span>Piano</h1>
+        <p class="tagline">Transform any song into a piano masterpiece</p>
+    </header>
+
+    <main>
+        <div class="card">
+            <!-- Input Form -->
+            <div id="inputForm">
+                <div class="tabs">
+                    <button class="tab active" data-tab="youtube">YouTube URL</button>
+                    <button class="tab" data-tab="upload">Upload File</button>
+                </div>
+
+                <div class="error-message" id="errorMessage"></div>
+
+                <!-- YouTube Tab -->
+                <div class="tab-content active" id="youtube-content">
+                    <div class="input-group">
+                        <label for="youtubeUrl">Paste YouTube URL</label>
+                        <input type="text" id="youtubeUrl" class="url-input" placeholder="https://www.youtube.com/watch?v=...">
+                    </div>
+                </div>
+
+                <!-- Upload Tab -->
+                <div class="tab-content" id="upload-content">
+                    <div class="file-drop" id="fileDrop">
+                        <svg class="file-drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M9 17V11M9 11L7 13M9 11L11 13"/>
+                            <path d="M15 17V11M15 11L13 13M15 11L17 13"/>
+                            <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"/>
+                        </svg>
+                        <p class="file-drop-text">Drop your audio file here</p>
+                        <p class="file-drop-hint">or click to browse (MP3, WAV, M4A)</p>
+                        <input type="file" id="fileInput" accept=".mp3,.wav,.m4a,.ogg,.flac">
+                    </div>
+                    <div class="file-selected" id="fileSelected" style="display: none;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 18V5l12-2v13"/>
+                            <circle cx="6" cy="18" r="3"/>
+                            <circle cx="18" cy="16" r="3"/>
+                        </svg>
+                        <span class="file-selected-name" id="fileName"></span>
+                        <button class="file-remove" id="fileRemove">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                <line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Composer Selection -->
+                <div class="input-group" style="margin-top: 1.5rem;">
+                    <label for="composer">Piano Style</label>
+                    <select id="composer" class="composer-select">
+                        <option value="composer1">Style 1 - Classical</option>
+                        <option value="composer2">Style 2 - Romantic</option>
+                        <option value="composer3">Style 3 - Modern</option>
+                        <option value="composer4">Style 4 - Jazz</option>
+                        <option value="composer5">Style 5 - Ballad</option>
+                    </select>
+                </div>
+
+                <button class="btn btn-primary" id="processBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="5 3 19 12 5 21 5 3"/>
+                    </svg>
+                    Generate Piano Cover
+                </button>
+            </div>
+
+            <!-- Loading State -->
+            <div class="loading" id="loading">
+                <div class="loading-piano">
+                    <div class="loading-key"></div>
+                    <div class="loading-key"></div>
+                    <div class="loading-key"></div>
+                    <div class="loading-key"></div>
+                    <div class="loading-key"></div>
+                </div>
+                <p class="loading-text">Creating your piano cover...</p>
+                <p class="loading-subtext" id="loadingStatus">Downloading audio</p>
+            </div>
+
+            <!-- Results -->
+            <div class="results" id="results">
+                <div class="results-header">
+                    <h2 class="results-title">Your Piano Cover is Ready</h2>
+                    <p class="results-subtitle">Listen and compare the original with the AI-generated piano version</p>
+                </div>
+
+                <div class="audio-section">
+                    <div class="audio-label">
+                        <span class="audio-badge badge-original">Original</span>
+                        <span class="audio-title">Source Track</span>
+                    </div>
+                    <audio id="originalAudio" class="audio-player" controls></audio>
+                </div>
+
+                <div class="audio-section">
+                    <div class="audio-label">
+                        <span class="audio-badge badge-piano">Piano</span>
+                        <span class="audio-title">Generated Cover</span>
+                    </div>
+                    <audio id="pianoAudio" class="audio-player" controls></audio>
+                </div>
+
+                <div class="download-row">
+                    <a href="#" id="downloadOriginal" class="download-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        Original Audio
+                    </a>
+                    <a href="#" id="downloadPiano" class="download-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        Piano Audio
+                    </a>
+                    <a href="#" id="downloadMidi" class="download-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        MIDI File
+                    </a>
+                </div>
+
+                <button class="btn btn-primary new-track-btn" id="newTrackBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Process Another Track
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>Powered by <a href="https://arxiv.org/abs/2211.00895" target="_blank">Pop2Piano</a> &middot; AI-Generated Piano Covers</p>
+    </footer>
+
+    <script>
+        // State
+        let selectedFile = null;
+        let currentTab = 'youtube';
+
+        // Elements
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const inputForm = document.getElementById('inputForm');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+        const errorMessage = document.getElementById('errorMessage');
+        const processBtn = document.getElementById('processBtn');
+        const fileDrop = document.getElementById('fileDrop');
+        const fileInput = document.getElementById('fileInput');
+        const fileSelected = document.getElementById('fileSelected');
+        const fileName = document.getElementById('fileName');
+        const fileRemove = document.getElementById('fileRemove');
+        const loadingStatus = document.getElementById('loadingStatus');
+
+        // Tab Switching
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabId = tab.dataset.tab;
+                currentTab = tabId;
+
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                tabContents.forEach(content => {
+                    content.classList.remove('active');
+                    if (content.id === `${tabId}-content`) {
+                        content.classList.add('active');
+                    }
+                });
+            });
+        });
+
+        // File Drop
+        fileDrop.addEventListener('click', () => fileInput.click());
+
+        fileDrop.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileDrop.classList.add('dragover');
+        });
+
+        fileDrop.addEventListener('dragleave', () => {
+            fileDrop.classList.remove('dragover');
+        });
+
+        fileDrop.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileDrop.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        fileRemove.addEventListener('click', () => {
+            selectedFile = null;
+            fileInput.value = '';
+            fileSelected.style.display = 'none';
+            fileDrop.style.display = 'block';
+        });
+
+        function handleFileSelect(file) {
+            selectedFile = file;
+            fileName.textContent = file.name;
+            fileSelected.style.display = 'flex';
+            fileDrop.style.display = 'none';
+        }
+
+        // Process Button
+        processBtn.addEventListener('click', async () => {
+            hideError();
+
+            if (currentTab === 'youtube') {
+                const url = document.getElementById('youtubeUrl').value.trim();
+                if (!url) {
+                    showError('Please enter a YouTube URL');
+                    return;
+                }
+                await processYouTube(url);
+            } else {
+                if (!selectedFile) {
+                    showError('Please select an audio file');
+                    return;
+                }
+                await processUpload(selectedFile);
+            }
+        });
+
+        async function processYouTube(url) {
+            const composer = document.getElementById('composer').value;
+
+            showLoading('Downloading from YouTube...');
+
+            try {
+                const response = await fetch('/api/process/youtube', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url, composer })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Processing failed');
+                }
+
+                showResults(data);
+            } catch (error) {
+                hideLoading();
+                showError(error.message);
+            }
+        }
+
+        async function processUpload(file) {
+            const composer = document.getElementById('composer').value;
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('composer', composer);
+
+            showLoading('Processing your audio...');
+
+            try {
+                const response = await fetch('/api/process/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Processing failed');
+                }
+
+                showResults(data);
+            } catch (error) {
+                hideLoading();
+                showError(error.message);
+            }
+        }
+
+        function showLoading(status) {
+            inputForm.style.display = 'none';
+            results.classList.remove('active');
+            loading.classList.add('active');
+            loadingStatus.textContent = status;
+
+            // Simulate status updates
+            setTimeout(() => {
+                if (loading.classList.contains('active')) {
+                    loadingStatus.textContent = 'Analyzing audio structure...';
+                }
+            }, 3000);
+
+            setTimeout(() => {
+                if (loading.classList.contains('active')) {
+                    loadingStatus.textContent = 'Generating piano arrangement...';
+                }
+            }, 8000);
+        }
+
+        function hideLoading() {
+            loading.classList.remove('active');
+            inputForm.style.display = 'block';
+        }
+
+        function showResults(data) {
+            loading.classList.remove('active');
+
+            document.getElementById('originalAudio').src = data.original_audio;
+            document.getElementById('pianoAudio').src = data.piano_audio;
+
+            const jobId = data.job_id;
+            document.getElementById('downloadOriginal').href = data.original_audio.replace('/api/file/', '/api/download/');
+            document.getElementById('downloadPiano').href = data.piano_audio.replace('/api/file/', '/api/download/');
+            document.getElementById('downloadMidi').href = data.midi.replace('/api/file/', '/api/download/');
+
+            results.classList.add('active');
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('active');
+        }
+
+        function hideError() {
+            errorMessage.classList.remove('active');
+        }
+
+        // New Track Button
+        document.getElementById('newTrackBtn').addEventListener('click', () => {
+            results.classList.remove('active');
+            inputForm.style.display = 'block';
+
+            // Reset form
+            document.getElementById('youtubeUrl').value = '';
+            selectedFile = null;
+            fileInput.value = '';
+            fileSelected.style.display = 'none';
+            fileDrop.style.display = 'block';
+        });
+    </script>
+</body>
+</html>
